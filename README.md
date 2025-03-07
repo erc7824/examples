@@ -11,12 +11,12 @@ In this example, the client is calling a method named `"subtract"` with position
 
 ```json
 {
-  "rpc": [1, 1001, "subtract", [42, 23], 1741344819012],
+  "req": [1001, "subtract", [42, 23], 1741344819012],
   "sig": "0xa0ad67f51cc73aee5b874ace9bc2e2053488bde06de257541e05fc58fd8c4f149cca44f1c702fcbdbde0aa09bcd24456f465e5c3002c011a3bc0f317df7777d2"
 }
 ```
 
-- rpc: rpc message payload `[type, request_id, method, params, ts]`
+- req: rpc message payload `[request_id, method, params, ts]`
 - sig: payload client signature
 
 The millisecond timestamp was returned previously from the server, it is used as a height for proof of history
@@ -27,14 +27,15 @@ For a successful invocation, the server might respond like this:
 
 ```json
 {
-  "rpc": [2, 1001, "subtract", [19], 1741344819814],
+  "res": [1001, "subtract", [19], 1741344819814],
   "sig": "0xd73268362b04516451ec52170f5c8ca189d35d9ac5e9041c156c9f0faf9aebd2891309e3b2b5d8788578ab3449c96f7aa81aefb25482b53f02bac42c65f806e5"
 }
 ```
 
-- rpc: rpc message payload `[type, request_id, method, params, ts]`
+- res: rpc message payload `[request_id, method, params, ts]`
 - sig: payload server response signature
-- ts: server response with latest timestamp
+
+**ts**: server response with latest timestamp
 
 ### NitroCalc
 
