@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package nitro_rpc;
+
+option go_package = "github.com/erc7824/nitro-rpc";
+
+// NitroRPC defines the protocol for asynchronous RPC communication with signatures
+service NitroRPC {
+  // Call executes a remote procedure call
+  rpc Call(Request) returns (Response) {}
+}
+
+// Request represents a signed RPC request message
+message Request {
+  // The RPC request payload
+  RequestPayload req = 1;
+  
+  // Signature of the payload by the client
+  string sig = 2;
+}
+
+// RequestPayload contains the actual RPC request data
+message RequestPayload {
+  // Unique request identifier
+  uint64 request_id = 1;
+  
+  // Method name to invoke
+  string method = 2;
+  
+  // Parameters for the method (encoded as necessary)
+  repeated bytes params = 3;
+  
+  // Timestamp in milliseconds (previously returned from server)
+  uint64 timestamp = 4;
+}
+
+// Response represents a signed RPC response message
+message Response {
+  // The RPC response payload
+  ResponsePayload res = 1;
+  
+  // Signature of the payload by the server
+  string sig = 2;
+}
+
+// ResponsePayload contains the actual RPC response data
+message ResponsePayload {
+  // Matching request identifier from the request
+  uint64 request_id = 1;
+  
+  // Method name that was invoked
+  string method = 2;
+  
+  // Return values from the method (encoded as necessary)
+  repeated bytes results = 3;
+  
+  // Latest server timestamp in milliseconds
+  uint64 timestamp = 4;
+}

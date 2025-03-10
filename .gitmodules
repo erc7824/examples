@@ -1,0 +1,3 @@
+[submodule "nitro_rpc/lib/forge-std"]
+	path = nitro_rpc/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
