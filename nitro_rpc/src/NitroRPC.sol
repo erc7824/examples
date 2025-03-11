@@ -2,14 +2,15 @@
 pragma solidity ^0.8.17;
 
 
-import {INitroTypes} from "../lib/nitro/src/interfaces/INitroTypes.sol";
-import {NitroUtils} from "../lib/nitro/src/libraries/NitroUtils.sol";
+import {INitroTypes} from "nitro/interfaces/INitroTypes.sol";
+import {NitroUtils} from "nitro/libraries/NitroUtils.sol";
+import {IForceMoveApp} from "nitro/interfaces/IForceMoveApp.sol";
 
 /**
  * @title NitroRPC
  * @dev Solidity implementation of Nitro RPC protocol structures
  */
-interface NitroRPC {
+contract NitroRPC is IForceMoveApp {
     struct Payload {
         uint256 requestId;
         uint256 timestamp;
@@ -20,8 +21,8 @@ interface NitroRPC {
 
     struct PayloadSigned {
       Payload rpcMessage;
-      Signature clientSig;
-      Signature serverSig;
+      INitroTypes.Signature clientSig;
+      INitroTypes.Signature serverSig;
     }
 
     enum AllocationIndices {
@@ -37,27 +38,27 @@ interface NitroRPC {
      * @param candidate Recovered variable part the proof was supplied for.
      */
     function stateIsSupported(
-        FixedPart calldata fixedPart,
-        RecoveredVariablePart[] calldata proof,
-        RecoveredVariablePart calldata candidate
+        INitroTypes.FixedPart calldata fixedPart,
+        INitroTypes.RecoveredVariablePart[] calldata proof,
+        INitroTypes.RecoveredVariablePart calldata candidate
     ) external pure override returns (bool, string memory) {
         require(fixedPart.participants.length == uint256(AllocationIndices.Server) + 1, "bad number of participants");
         
         PayloadSigned memory payloadSigned = abi.decode(candidate.variablePart.appData, (PayloadSigned));
-        requireValidPayload(payloadSigned);
+        requireValidPayload(fixedPart, payloadSigned);
 
         return (true, "");
     }
 
-    function requireValidPayload(PayloadSigned memory payloadSigned) internal pure {
-        require(recoverPayloadSigner(payloadSigned.rpcMessage, payloadSigned.clientSig) == fixedPart.participants[AllocationIndices.Client], "bad client signature");
-        require(recoverPayloadSigner(payloadSigned.rpcMessage, payloadSigned.serverSig) == fixedPart.participants[AllocationIndices.Server], "bad server signature");
+    function requireValidPayload(INitroTypes.FixedPart calldata fixedPart, PayloadSigned memory payloadSigned) internal pure {
+        require(recoverPayloadSigner(payloadSigned.rpcMessage, payloadSigned.clientSig) == fixedPart.participants[uint256(AllocationIndices.Client)], "bad client signature");
+        require(recoverPayloadSigner(payloadSigned.rpcMessage, payloadSigned.serverSig) == fixedPart.participants[uint256(AllocationIndices.Server)], "bad server signature");
 
         // TODO: verify timestamp and requestId
     }
 
     // This pure internal function recovers the signer address from the payload and its signature.
-    function recoverPayloadSigner(Payload memory payload, Signature memory signature) internal pure returns (address) {
+    function recoverPayloadSigner(Payload memory payload, INitroTypes.Signature memory signature) internal pure returns (address) {
         // Encode and hash the payload data.
         // Using abi.encode ensures proper padding and decoding, avoiding potential ambiguities with dynamic types.
         bytes32 messageHash = keccak256(
