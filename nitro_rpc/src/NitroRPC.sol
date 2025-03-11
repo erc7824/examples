@@ -2,8 +2,8 @@
 pragma solidity ^0.8.17;
 
 
-import {INitroTypes} from "./TempINitroTypes.sol";
-import {NitroUtils} from "./TempNitroUtils.sol";
+import {INitroTypes} from "../lib/nitro/src/interfaces/INitroTypes.sol";
+import {NitroUtils} from "../lib/nitro/src/libraries/NitroUtils.sol";
 
 /**
  * @title NitroRPC
