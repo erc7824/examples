@@ -4,3 +4,6 @@
 [submodule "nitro_rpc/lib/exit-format"]
 	path = nitro_rpc/lib/exit-format
 	url = https://github.com/statechannels/exit-format
+[submodule "nitro_rpc/lib/nitro"]
+	path = nitro_rpc/lib/nitro
+	url = https://github.com/erc7824/nitro
