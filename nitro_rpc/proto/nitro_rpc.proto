@@ -1,8 +1,7 @@
 syntax = "proto3";
 
 package nitro_rpc;
-
-option go_package = "github.com/erc7824/nitro-rpc";
+option go_package = "github.com/erc7824/examples/nitro_rpc/proto;proto";
 
 // NitroRPC defines the protocol for asynchronous RPC communication with signatures
 service NitroRPC {
@@ -28,7 +27,7 @@ message RequestPayload {
   string method = 2;
   
   // Parameters for the method (encoded as necessary)
-  repeated bytes params = 3;
+  bytes params = 3;
   
   // Timestamp in milliseconds (previously returned from server)
   uint64 timestamp = 4;
@@ -52,7 +51,7 @@ message ResponsePayload {
   string method = 2;
   
   // Return values from the method (encoded as necessary)
-  repeated bytes results = 3;
+  bytes results = 3;
   
   // Latest server timestamp in milliseconds
   uint64 timestamp = 4;
