@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/erc7824/examples/nitro_rpc/proto"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/layer-3/clearsync/pkg/signer"
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,7 +21,12 @@ func (m *MethodHandlerMock) HandleCall(ctx context.Context, params []byte) ([]by
 
 func TestServerCall(t *testing.T) {
 	mh := &MethodHandlerMock{}
-	handler := proto.NewNitroRPCServer(NewServer(mh))
+
+	privateKey, err := crypto.GenerateKey()
+	require.NoError(t, err)
+	ss := signer.NewLocalSigner(privateKey)
+
+	handler := proto.NewNitroRPCServer(NewServer(mh, ss))
 	srv := http.Server{
 		Addr:    ":8089",
 		Handler: handler,
