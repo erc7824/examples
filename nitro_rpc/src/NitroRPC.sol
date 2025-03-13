@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {INitroTypes} from "nitro/interfaces/INitroTypes.sol";
 import {NitroUtils} from "nitro/libraries/NitroUtils.sol";
 import {IForceMoveApp} from "nitro/interfaces/IForceMoveApp.sol";
@@ -42,7 +43,7 @@ contract NitroRPC is IForceMoveApp {
         INitroTypes.RecoveredVariablePart[] calldata proof,
         INitroTypes.RecoveredVariablePart calldata candidate
     ) external pure override returns (bool, string memory) {
-        require(fixedPart.participants.length == uint256(AllocationIndices.Server) + 1, "bad number of participants");
+        require(fixedPart.participants.length == uint256(type(AllocationIndices).max) + 1, "bad number of participants");
         
         PayloadSigned memory payloadSigned = abi.decode(candidate.variablePart.appData, (PayloadSigned));
         requireValidPayload(fixedPart, payloadSigned);
@@ -71,12 +72,6 @@ contract NitroRPC is IForceMoveApp {
             )
         );
         
-        // Apply the Ethereum Signed Message prefix.
-        bytes32 ethSignedMessageHash = keccak256(
-            abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash)
-        );
-        
-        // Recover the signer address using ecrecover.
-        return ecrecover(ethSignedMessageHash, signature.v, signature.r, signature.s);
+        return ECDSA.recover(MessageHashUtils.toEthSignedMessageHash(messageHash), signature.v, signature.r, signature.s);
     }
 }
