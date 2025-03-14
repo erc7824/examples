@@ -66,6 +66,20 @@ CREATE TABLE rpc_states (
 - Create a simplified NitroCalc Service using sqlite for state (in go)
 - Finally, we can import nitro pkg, and client or server can pack and sqlite state and call nitro of on-chain channel operations.
 
+### Questions
+
+* Where state-management is happening?
+* Communication diagram between BusinessApp, NitroRPC and NitroCore
+* Who is responsible for the state signing? (One signer on Client, One signer on Server???)
+* Do we have 2-step communication like?
+  - Client -> Server: Request
+  - Server -> Client: Response (Server signs?)
+  - Client -> Server: Acknowledge (Client signs?)
+  - Server -> Client: Acknowledge
+* Do we implement nitro specific methods (open, checkpoint, dispute, finalize) in the NitroRPC service?
+* Does NitroRPC server have BusinessApp logic?
+* Does NitroRPC server stores rpc states?
+
 #### Markdown Table Example
 
 | ID   | Timestamp (ts)     | Method         | Request Arguments                  | Response Arguments                |
