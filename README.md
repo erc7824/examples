@@ -144,13 +144,13 @@ CREATE TABLE rpc_states (
 ```
 
 #### TODO:
-- Create AppData in solidity
-- Create NitroApp to validate states including AppData
-- Create Protobuf description of NitroRPC Request / Response
-- Include NitroRPC types into gRPC and generate client and server
-- Implement methods: `add(int), sub(int), mul(int), mod(int)` starting from `0`
-- Create a simplified NitroCalc Service using sqlite for state (in go)
-- Finally, we can import nitro pkg, and client or server can pack and sqlite state and call nitro of on-chain channel operations.
+- [ ] Create AppData in solidity
+- [ ] Create NitroApp to validate states including AppData
+- [ ] Create Protobuf description of NitroRPC Request / Response
+- [ ] Include NitroRPC types into gRPC and generate client and server
+- [ ] Implement methods: `add(int), sub(int), mul(int), mod(int)` starting from `0`
+- [ ] Create a simplified NitroCalc Service using sqlite for state (in go)
+- [ ] Finally, we can import nitro pkg, and client or server can pack and sqlite state and call nitro of on-chain channel operations.
 
 ### Questions
 
