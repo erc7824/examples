@@ -6,6 +6,8 @@ Nitro Protocol Examples
 Those application leverage the NitroRPC Asynchronous protocol, it describe a data format, that must be understood and readable by both backend, frontend and smart-contract NitroRPCApp (adjudication)
 
 Here is the format:
+
+### Solidity
 ```solidity
 struct NitroRPC {
     uint64 req_id;   // Unique request ID (non-zero)
@@ -45,6 +47,7 @@ rpc_hash = keccak256(
 # rpc_hash can be used to erecover the public key
 ```
 
+### Go lang
 ```go
 package main
 
