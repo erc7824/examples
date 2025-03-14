@@ -3,7 +3,93 @@ Nitro Protocol Examples
 
 ## Nitro RPC
 
-Those application leverage the NitroRPC Asynchronous protocol
+Those application leverage the NitroRPC Asynchronous protocol, it describe a data format, that must be understood and readable by both backend, frontend and smart-contract NitroRPCApp (adjudication)
+
+Here is the format:
+```solidity
+struct NitroRPC {
+    uint64 req_id;   // Unique request ID (non-zero)
+    string method;   // RPC method name (e.g., "substract")
+    string[] params; // Array of parameters for the RPC call
+    uint64 ts;       // Milisecond unix timestamp provided by the server api
+}
+
+NitroRPC memory rpc = NitroRPC({
+    req_id: 123,
+    method: "subtract",
+    params: new string  ts: 1710474422
+});
+
+bytes memory encoded1 = ABI.encode(rpc);
+bytes memory encoded2 = ABI.encode(rpc.req_id, rpc.method, rpc.params, rpc.ts);
+
+require(keccak256(encoded1) == keccak256(encoded2), "Mismatch in encoding!");
+```
+
+### The RPCHash
+
+Client and server must sign the Nitro RPC Hash as followed
+
+### Solidity
+
+```solidity
+rpc_hash = keccak256(
+  abi.encode(
+    rpc.req_id,
+    rpc.method,
+    rpc.params,
+    rpc.ts
+  )
+);
+
+# rpc_hash can be used to erecover the public key
+```
+
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/crypto"
+	"log"
+)
+
+type NitroRPC struct {
+	ReqID  uint64
+	Method string
+	Params []string
+	TS     uint64
+}
+
+func main() {
+	rpc := NitroRPC{
+		ReqID:  123,
+		Method: "subtract",
+		Params: []string{"param1", "param2"},
+		TS:     1710474422,
+	}
+
+	packedData, err := abi.Arguments{
+		{Type: abi.UintTy},
+		{Type: abi.StringTy},
+		{Type: abi.StringSliceTy},
+		{Type: abi.UintTy},
+	}.Pack(rpc.ReqID, rpc.Method, rpc.Params, rpc.TS)
+	if err != nil {
+		log.Fatal("ABI encoding failed:", err)
+	}
+
+	hash := crypto.Keccak256(packedData)
+	fmt.Println("Keccak256 Hash:", hexutil.Encode(hash))
+}
+```
+
+## NitroRPC Transport
+
+In NitroRPC the transport layer is agnostic to describe in any syntax as long as the NitroRPC Type, RPCHash and signature convention are valid.
+You can use json-rpc, msgpack, protobug, gRPC or any custom marshalling and transport layer.
 
 ### NitroRPC Request
 
