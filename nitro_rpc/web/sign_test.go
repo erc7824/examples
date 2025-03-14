@@ -1,6 +1,7 @@
 package web
 
 import (
+	"math/big"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -19,20 +20,16 @@ func TestServerSign(t *testing.T) {
 	srv := NewServer(mh, ss)
 
 	state := RPCState{
-		Timestamp: 1000,
-		RequestID: 42,
-		method:    "testMethod",
-		params:    []byte("testParams"),
-		result:    []byte("testResult"),
+		Timestamp: new(big.Int).SetUint64(1000),
+		RequestID: new(big.Int).SetUint64(42),
+		Method:    "testMethod",
+		Params:    []byte("testParams"),
+		Result:    []byte("testResult"),
 	}
 
 	sig, err := srv.Sign(state)
 	require.NoError(t, err)
 
-	expectedSig := signer.NewSignature(
-		hexutil.MustDecode("0x8884c2fa5269d26ae4645f776f0a1a41f6dc45aa8b8fea947392b7629bc645ec"),
-		hexutil.MustDecode("0x73a4a1a2b8b5775bb42956ff666df93089c3ad984db4f7870b69841df75d1bde"),
-		27,
-	)
+	expectedSig := signer.NewSignatureFromBytes(hexutil.MustDecode("0x4a9aa9cafc9e804a17cf56ba8c6ff82a5dffacb00997d2f95005636ed8b40de32fbaaf2361b62dfd1bbecfd6603422d5497eda127fdfb902951e2acff17c9c361c"))
 	require.Equal(t, expectedSig, sig)
 }

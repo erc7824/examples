@@ -4,4 +4,3 @@ exit-format/=lib/nitro/lib/exit-format/src/
 forge-std/=lib/forge-std/src/
 halmos-cheatcodes/=lib/openzeppelin-contracts/lib/halmos-cheatcodes/src/
 nitro/=lib/nitro/src/
-openzeppelin-contracts/=lib/openzeppelin-contracts/

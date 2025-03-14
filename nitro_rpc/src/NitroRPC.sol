@@ -22,8 +22,8 @@ contract NitroRPC is IForceMoveApp {
 
     struct PayloadSigned {
       Payload rpcMessage;
-      INitroTypes.Signature clientSig;
-      INitroTypes.Signature serverSig;
+      bytes clientSig;
+      bytes serverSig;
     }
 
     enum AllocationIndices {
@@ -59,19 +59,7 @@ contract NitroRPC is IForceMoveApp {
     }
 
     // This pure internal function recovers the signer address from the payload and its signature.
-    function recoverPayloadSigner(Payload memory payload, INitroTypes.Signature memory signature) internal pure returns (address) {
-        // Encode and hash the payload data.
-        // Using abi.encode ensures proper padding and decoding, avoiding potential ambiguities with dynamic types.
-        bytes32 messageHash = keccak256(
-            abi.encode(
-                payload.requestId,
-                payload.timestamp,
-                payload.method,
-                payload.params,
-                payload.result
-            )
-        );
-        
-        return ECDSA.recover(MessageHashUtils.toEthSignedMessageHash(messageHash), signature.v, signature.r, signature.s);
+    function recoverPayloadSigner(Payload memory payload, bytes memory signature) internal pure returns (address) {
+        return ECDSA.recover(MessageHashUtils.toEthSignedMessageHash(keccak256(abi.encode(payload))), signature);
     }
 }

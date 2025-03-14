@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"math/big"
 
 	"github.com/erc7824/examples/nitro_rpc/proto"
 	"github.com/layer-3/clearsync/pkg/signer"
@@ -32,11 +33,11 @@ func (s *Server) Call(ctx context.Context, req *proto.Request) (*proto.Response,
 	}
 
 	state := RPCState{
-		RequestID: req.Req.GetRequestId(),
-		Timestamp: req.Req.GetTimestamp(),
-		method:    req.Req.GetMethod(),
-		params:    req.Req.GetParams(),
-		result:    result,
+		RequestID: new(big.Int).SetUint64(req.Req.GetRequestId()),
+		Timestamp: new(big.Int).SetUint64(req.Req.GetTimestamp()),
+		Method:    req.Req.GetMethod(),
+		Params:    req.Req.GetParams(),
+		Result:    result,
 	}
 	sig, err := s.Sign(state)
 	if err != nil {
@@ -45,10 +46,10 @@ func (s *Server) Call(ctx context.Context, req *proto.Request) (*proto.Response,
 
 	return &proto.Response{
 		Res: &proto.ResponsePayload{
-			RequestId: state.RequestID,
-			Method:    state.method,
-			Timestamp: state.Timestamp,
-			Results:   state.result,
+			RequestId: state.RequestID.Uint64(),
+			Timestamp: state.Timestamp.Uint64(),
+			Method:    state.Method,
+			Results:   state.Result,
 		},
 		Sig: sig.String(),
 	}, nil

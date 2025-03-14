@@ -11,11 +11,11 @@ import (
 var rpcStateABIArgs abi.Arguments
 
 type RPCState struct {
-	RequestID uint64
-	Timestamp uint64
-	method    string
-	params    []byte
-	result    []byte
+	RequestID *big.Int `abi:"requestId"`
+	Timestamp *big.Int `abi:"timestamp"`
+	Method    string   `abi:"method"`
+	Params    []byte   `abi:"params"`
+	Result    []byte   `abi:"result"`
 }
 
 type SignedRPCState struct {
@@ -25,13 +25,7 @@ type SignedRPCState struct {
 }
 
 func (s *Server) Sign(state RPCState) (signer.Signature, error) {
-	packed, err := rpcStateABIArgs.Pack(
-		new(big.Int).SetUint64(state.RequestID),
-		new(big.Int).SetUint64(state.Timestamp),
-		state.method,
-		state.params,
-		state.result,
-	)
+	packed, err := rpcStateABIArgs.Pack(state)
 	if err != nil {
 		return signer.Signature{}, err
 	}
@@ -46,26 +40,22 @@ func (s *Server) Sign(state RPCState) (signer.Signature, error) {
 }
 
 func init() {
-	uint256Type, err := abi.NewType("uint256", "", nil)
-	if err != nil {
-		panic(err)
+	tupleArgs := []abi.ArgumentMarshaling{
+		{Name: "requestId", Type: "uint256"},
+		{Name: "timestamp", Type: "uint256"},
+		{Name: "method", Type: "string"},
+		{Name: "params", Type: "bytes"},
+		{Name: "result", Type: "bytes"},
 	}
 
-	stringType, err := abi.NewType("string", "", nil)
-	if err != nil {
-		panic(err)
-	}
-
-	bytesType, err := abi.NewType("bytes", "", nil)
+	tupleType, err := abi.NewType("tuple", "", tupleArgs)
 	if err != nil {
 		panic(err)
 	}
 
 	rpcStateABIArgs = abi.Arguments{
-		{Type: uint256Type},
-		{Type: uint256Type},
-		{Type: stringType},
-		{Type: bytesType},
-		{Type: bytesType},
+		{
+			Type: tupleType,
+		},
 	}
 }
