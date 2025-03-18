@@ -1,5 +1,110 @@
 # Nitro Examples
 Nitro Protocol Examples
+## Nitro Channel Protocol
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Server
+
+    Client->>Server: create_channel(signed funding allocation)
+    Server-->>Client: response(countersigned allocation)
+
+    Client->>Server: open_channel(signed turnNum=1)
+    Server-->>Client: response(countersigned turnNum=1)
+
+    opt Application Protocol
+        Note over Client: App protocol
+    	Client->>Server: AppData(nitro_rpc)
+        Server-->>Client: AppData(nitro_rpc)
+    end
+
+    Client->>Server: close_channel(signed state turnNum=N)
+    Server-->>Client: response(countersigned state at TurnNum=N)
+```
+
+```protobuf
+/**
+ * A 42-character hexadecimal address
+ * derived from the last 20 bytes of the public key
+ */
+message Address {
+  string value = 1;
+}
+
+/**
+ * A 132-character hexadecimal string
+ */
+message Signature {
+  uint32 v = 1;
+  bytes r = 2;  // 32 bytes
+  bytes s = 3;  // 32 bytes
+}
+
+enum AssetType {
+  ASSET_TYPE_UNSPECIFIED = 0;
+  ASSET_TYPE_ERC721 = 1;
+  ASSET_TYPE_ERC1155 = 2;
+  ASSET_TYPE_QUALIFIED = 3;
+}
+
+enum AllocationType {
+  ALLOCATION_TYPE_UNSPECIFIED = 0;
+  ALLOCATION_TYPE_WITHDRAW_HELPER = 1;
+  ALLOCATION_TYPE_GUARANTEE = 2;
+}
+
+message Allocation {
+  bytes destination = 1;    // bytes32 in solidity
+  string amount = 2;        // big.Int cast to string
+  AllocationType allocation_type = 3;
+  bytes metadata = 4;
+}
+
+message AssetMetadata {
+  AssetType asset_type = 1;
+  bytes metadata = 2;
+}
+
+message SingleAssetExit {
+  // Either the zero address (implying the native token)
+  // or the address of an ERC20 contract
+  core.Address asset = 1; 
+  AssetMetadata asset_metadata = 2;
+  repeated Allocation allocations = 3;
+}
+
+message Exit {
+  repeated SingleAssetExit single_asset_exits = 1;
+}
+
+message FixedPart {
+  repeated Address participants = 1;
+  uint64 channel_nonce = 2;
+  core.Address app_definition = 3;
+  uint32 challenge_duration = 4;
+}
+
+message VariablePart {
+  outcome.Exit outcome = 1;
+  bytes app_data = 2;
+  uint64 turn_num = 3;
+  bool is_final = 4;
+}
+
+message State {
+  FixedPart fixed_part = 1;
+  VariablePart variable_part = 2;
+  string state_hash = 3;
+  Signature state_sig = 4;
+}
+
+service Channel {
+  rpc Create(State) returns (State);
+  rpc Open(State) returns (State);
+  rpc Close(State) returns (State);
+}
+```
 
 ## Nitro RPC
 
