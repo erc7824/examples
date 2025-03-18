@@ -1,9 +1,203 @@
 # Nitro Examples
 Nitro Protocol Examples
+## Nitro Channel Protocol
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Server
+
+    Client->>Server: create_channel(signed funding allocation)
+    Server-->>Client: response(countersigned allocation)
+
+    Client->>Server: open_channel(signed turnNum=1)
+    Server-->>Client: response(countersigned turnNum=1)
+
+    opt Application Protocol
+        Note over Client: App protocol
+    	Client->>Server: AppData(nitro_rpc)
+        Server-->>Client: AppData(nitro_rpc)
+    end
+
+    Client->>Server: close_channel(signed state turnNum=N)
+    Server-->>Client: response(countersigned state at TurnNum=N)
+```
+
+```protobuf
+/**
+ * A 42-character hexadecimal address
+ * derived from the last 20 bytes of the public key
+ */
+message Address {
+  string value = 1;
+}
+
+/**
+ * A 132-character hexadecimal string
+ */
+message Signature {
+  uint32 v = 1;
+  bytes r = 2;  // 32 bytes
+  bytes s = 3;  // 32 bytes
+}
+
+enum AssetType {
+  ASSET_TYPE_UNSPECIFIED = 0;
+  ASSET_TYPE_ERC721 = 1;
+  ASSET_TYPE_ERC1155 = 2;
+  ASSET_TYPE_QUALIFIED = 3;
+}
+
+enum AllocationType {
+  ALLOCATION_TYPE_UNSPECIFIED = 0;
+  ALLOCATION_TYPE_WITHDRAW_HELPER = 1;
+  ALLOCATION_TYPE_GUARANTEE = 2;
+}
+
+message Allocation {
+  bytes destination = 1;    // bytes32 in solidity
+  string amount = 2;        // big.Int cast to string
+  AllocationType allocation_type = 3;
+  bytes metadata = 4;
+}
+
+message AssetMetadata {
+  AssetType asset_type = 1;
+  bytes metadata = 2;
+}
+
+message SingleAssetExit {
+  // Either the zero address (implying the native token)
+  // or the address of an ERC20 contract
+  core.Address asset = 1; 
+  AssetMetadata asset_metadata = 2;
+  repeated Allocation allocations = 3;
+}
+
+message Exit {
+  repeated SingleAssetExit single_asset_exits = 1;
+}
+
+message FixedPart {
+  repeated Address participants = 1;
+  uint64 channel_nonce = 2;
+  core.Address app_definition = 3;
+  uint32 challenge_duration = 4;
+}
+
+message VariablePart {
+  outcome.Exit outcome = 1;
+  bytes app_data = 2;
+  uint64 turn_num = 3;
+  bool is_final = 4;
+}
+
+message State {
+  FixedPart fixed_part = 1;
+  VariablePart variable_part = 2;
+  string state_hash = 3;
+  Signature state_sig = 4;
+}
+
+service Channel {
+  rpc Create(State) returns (State);
+  rpc Open(State) returns (State);
+  rpc Close(State) returns (State);
+}
+```
 
 ## Nitro RPC
 
-Those application leverage the NitroRPC Asynchronous protocol
+Those application leverage the NitroRPC Asynchronous protocol, it describe a data format, that must be understood and readable by both backend, frontend and smart-contract NitroRPCApp (adjudication)
+
+Here is the format:
+
+### Solidity
+```solidity
+struct NitroRPC {
+    uint64 req_id;   // Unique request ID (non-zero)
+    string method;   // RPC method name (e.g., "substract")
+    string[] params; // Array of parameters for the RPC call
+    uint64 ts;       // Milisecond unix timestamp provided by the server api
+}
+
+NitroRPC memory rpc = NitroRPC({
+    req_id: 123,
+    method: "subtract",
+    params: new string  ts: 1710474422
+});
+
+bytes memory encoded1 = ABI.encode(rpc);
+bytes memory encoded2 = ABI.encode(rpc.req_id, rpc.method, rpc.params, rpc.ts);
+
+require(keccak256(encoded1) == keccak256(encoded2), "Mismatch in encoding!");
+```
+
+### The RPCHash
+
+Client and server must sign the Nitro RPC Hash as followed
+
+### Solidity
+
+```solidity
+rpc_hash = keccak256(
+  abi.encode(
+    rpc.req_id,
+    rpc.method,
+    rpc.params,
+    rpc.ts
+  )
+);
+
+# rpc_hash can be used to erecover the public key
+```
+
+### Go lang
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/crypto"
+	"log"
+)
+
+type NitroRPC struct {
+	ReqID  uint64
+	Method string
+	Params []string
+	TS     uint64
+}
+
+func main() {
+	rpc := NitroRPC{
+		ReqID:  123,
+		Method: "subtract",
+		Params: []string{"param1", "param2"},
+		TS:     1710474422,
+	}
+
+	packedData, err := abi.Arguments{
+		{Type: abi.UintTy},
+		{Type: abi.StringTy},
+		{Type: abi.StringSliceTy},
+		{Type: abi.UintTy},
+	}.Pack(rpc.ReqID, rpc.Method, rpc.Params, rpc.TS)
+	if err != nil {
+		log.Fatal("ABI encoding failed:", err)
+	}
+
+	hash := crypto.Keccak256(packedData)
+	fmt.Println("Keccak256 Hash:", hexutil.Encode(hash))
+}
+```
+
+## NitroRPC Transport
+
+In NitroRPC the transport layer is agnostic to describe in any syntax as long as the NitroRPC Type, RPCHash and signature convention are valid.
+You can use json-rpc, msgpack, protobug, gRPC or any custom marshalling and transport layer.
 
 ### NitroRPC Request
 
@@ -58,13 +252,66 @@ CREATE TABLE rpc_states (
 ```
 
 #### TODO:
-- Create AppData in solidity
-- Create NitroApp to validate states including AppData
-- Create Protobuf description of NitroRPC Request / Response
-- Include NitroRPC types into gRPC and generate client and server
-- Implement methods: `add(int), sub(int), mul(int), mod(int)` starting from `0`
-- Create a simplified NitroCalc Service using sqlite for state (in go)
-- Finally, we can import nitro pkg, and client or server can pack and sqlite state and call nitro of on-chain channel operations.
+- [ ] Create AppData in solidity
+- [ ] Create NitroApp to validate states including AppData
+- [ ] Create Protobuf description of NitroRPC Request / Response
+- [ ] Include NitroRPC types into gRPC and generate client and server
+- [ ] Implement methods: `add(int), sub(int), mul(int), mod(int)` starting from `0`
+- [ ] Create a simplified NitroCalc Service using sqlite for state (in go)
+- [ ] Finally, we can import nitro pkg, and client or server can pack and sqlite state and call nitro of on-chain channel operations.
+
+### Questions
+
+#### Where state-management is happening?
+
+  Like the TicTacToe example, the Logic and App State is managed by the Nitro.App,
+  But also the state is created in compliance by implementing correctly Nitro.App interface See ADR-002
+  nitro package responsability is to unpack the state and submit it on-chain.
+  
+#### Communication diagram between BusinessApp, NitroRPC and NitroCore
+
+NitroRPC is embeded into the BusinessApp and it's only a norm, expect for the smart-contract NitroRPCApp
+
+nitro go package is providing helpers and functions to abstract the blockchain level things,
+it will take your Nitro.App state and execute the blockchain operation you request on the NitroAdjudicator (`prefunding, postfunding, finalize, checkpoint, challenge`)
+
+#### Who is responsible for the state signing? (One signer on Client, One signer on Server???)
+
+Client Nitro.App signs requests
+Server Nitro.App signs reponses
+
+Channel service or nitro package does sign for you, the private key is obviously not part of the package.
+But nitro pkg will help you sign and simplify all the nitro state creation.
+  
+#### Do we have 2-step communication like?
+  - Client -> Server: Request
+  - Server -> Client: Response (Server signs?)
+  - Client -> Server: Acknowledge (Client signs?)
+  - Server -> Client: Acknowledge
+ 
+I would say 1-step is Request-Response pair.
+
+- Request is signed by client
+- Response is signed by server
+
+anything else is an invalidate state (request signed without response, signature missing)
+
+#### Do we implement nitro specific methods (open, checkpoint, dispute, finalize) in the NitroRPC service?
+
+You only need to implement the transport, for example json-rpc handlers, or grpc, those specific method will be standardized
+nitro pkg will provide the implementation of those methods, you just need to provide the correct prefunding postfunding state in nitro.App
+
+A nitro.App is a state container, which can hold 1 or many state indexed by TurnNum, serialized and passed to nitro pkg/svc for execution.
+  
+#### Does NitroRPC server have BusinessApp logic?
+
+NitroRPC is just a convention, the Application has the business logic and implement an RPC protocol which comply with the state convention
+  
+#### Does NitroRPC server stores rpc states?
+
+It's high recommended, in the event of answering to a challenge, but most of the time you need only the recent state,
+but like I provided an SQL table, Application should keep track of state in some degree, it could be in memory and in a custom format
+as long as it's able to form an RPCHash again.
 
 #### Markdown Table Example
 
