@@ -7,3 +7,6 @@
 [submodule "nitro_rpc/lib/nitro"]
 	path = nitro_rpc/lib/nitro
 	url = https://github.com/erc7824/nitro
+[submodule "nitro_rpc/lib/openzeppelin-contracts"]
+	path = nitro_rpc/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
